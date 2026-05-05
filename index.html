@@ -164,9 +164,10 @@
     </div>
 
     <script>
-        // ========== 配置区域 ==========
-        // 请将下面的地址替换为你的code.coze.cn智能体API地址
-        const API_URL = 'https://z9zvzymyry.coze.site/stream_run';
+        // ========== 配置区域 - 替换成你自己的 ==========
+        const API_URL = 'https://z9zvzymyry.coze.site/stream_run';  // 你的API地址已经帮你填好了
+        const API_TOKEN = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImViZWU5MDU4LWJjZTctNDc2OS05ZTAxLTAwMzhlNTI0ZDcyZCJ9.eyJpc3MiOiJodHRwczovL2FwaS5jb3plLmNuIiwiYXVkIjpbIjE3ejFVS1NOdFFWTUFKRTdsbmFRYjlXNnhjcmJLOG5xIl0sImV4cCI6ODIxMDI2Njg3Njc5OSwiaWF0IjoxNzc4MDA0NzI5LCJzdWIiOiJzcGlmZmU6Ly9hcGkuY296ZS5jbi93b3JrbG9hZF9pZGVudGl0eS9pZDo3NjM2MDMwODgzOTMzMTkyMjI2Iiwic3JjIjoiaW5ib3VuZF9hdXRoX2FjY2Vzc190b2tlbl9pZDo3NjM2NDcyMTY3MTkzOTAzMTQ1In0.kT_iQwnSjhWr8eOb3v1Bxo98KmUtDkt4zA_cjc_jURCRfhZeb6W8wxBF8KDbjc82dT2T-dS8904VKYJYglpDdmii1xPquV1XA_4lhjvWTiP7Xka8SHAwyfQAvoTGTBbEZaS6gcv-SERUKnaj-DTmuWDtndn3YKavxaGjLz4eUNDgtUvY0NwXySDCP75wdW3fZyFVcyx1RQKTy3XoQ_4j1kRgQVfc8OFj2tlZeKjUzqkzd14tRKCnIvPuHtn8JuPloQvIMmYdaWQvVnJtLvy2MzbzIZkz1lLC8v3Zwec1OzK0CE765C6Eii6DWuJZ2Fpy8UzizTa4CFSObiZTZl79pQ';  // 把生成的Token粘贴到这里
+        const PROJECT_ID = '7636020878471495680';  // 你的项目ID已经帮你填好了
         
         // 对话历史上下文
         let conversationHistory = [];
@@ -200,18 +201,23 @@
             botMessageDiv.appendChild(typingSpan);
             
             try {
-                // 构建请求消息
-                const messages = [...conversationHistory, { role: 'user', content: message }];
-                
                 // 调用API
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + API_TOKEN  // 这里带上Token
                     },
                     body: JSON.stringify({
-                        messages: messages,
-                        stream: true
+                        query: {
+                            prompt: [{
+                                type: "text",
+                                content: { text: message }
+                            }]
+                        },
+                        type: "query",
+                        session_id: "session_" + Date.now(),
+                        project_id: PROJECT_ID
                     })
                 });
                 
@@ -237,6 +243,7 @@
                         if (line.startsWith('data: ')) {
                             try {
                                 const data = JSON.parse(line.slice(6));
+                                // 根据你的API实际返回格式调整这里
                                 if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
                                     const content = data.choices[0].delta.content;
                                     fullResponse += content;
@@ -250,17 +257,8 @@
                     }
                 }
                 
-                // 保存对话历史
-                conversationHistory.push({ role: 'user', content: message });
-                conversationHistory.push({ role: 'assistant', content: fullResponse });
-                
-                // 只保留最近10轮对话，避免上下文过长
-                if (conversationHistory.length > 20) {
-                    conversationHistory = conversationHistory.slice(-20);
-                }
-                
             } catch (error) {
-                botMessageDiv.innerHTML = '❌ 连接失败，请检查API地址是否正确。<br><br>错误信息: ' + error.message;
+                botMessageDiv.innerHTML = '❌ 连接失败<br><br>错误信息: ' + error.message;
             }
             
             sendBtn.disabled = false;
@@ -277,7 +275,7 @@
             return messageDiv;
         }
         
-        // 格式化消息（简单的换行处理）
+        // 格式化消息
         function formatMessage(text) {
             return text.replace(/\n/g, '<br>');
         }
@@ -287,7 +285,7 @@
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
         
-        // 页面加载时自动聚焦输入框
+        // 页面加载时自动聚焦
         window.onload = function() {
             userInput.focus();
         };
