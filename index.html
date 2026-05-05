@@ -164,13 +164,10 @@
     </div>
 
     <script>
-        // ========== 配置区域 - 替换成你自己的 ==========
-        const API_URL = 'https://z9zvzymyry.coze.site/stream_run';  // 你的API地址已经帮你填好了
-        const API_TOKEN = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImViZWU5MDU4LWJjZTctNDc2OS05ZTAxLTAwMzhlNTI0ZDcyZCJ9.eyJpc3MiOiJodHRwczovL2FwaS5jb3plLmNuIiwiYXVkIjpbIjE3ejFVS1NOdFFWTUFKRTdsbmFRYjlXNnhjcmJLOG5xIl0sImV4cCI6ODIxMDI2Njg3Njc5OSwiaWF0IjoxNzc4MDA0NzI5LCJzdWIiOiJzcGlmZmU6Ly9hcGkuY296ZS5jbi93b3JrbG9hZF9pZGVudGl0eS9pZDo3NjM2MDMwODgzOTMzMTkyMjI2Iiwic3JjIjoiaW5ib3VuZF9hdXRoX2FjY2Vzc190b2tlbl9pZDo3NjM2NDcyMTY3MTkzOTAzMTQ1In0.kT_iQwnSjhWr8eOb3v1Bxo98KmUtDkt4zA_cjc_jURCRfhZeb6W8wxBF8KDbjc82dT2T-dS8904VKYJYglpDdmii1xPquV1XA_4lhjvWTiP7Xka8SHAwyfQAvoTGTBbEZaS6gcv-SERUKnaj-DTmuWDtndn3YKavxaGjLz4eUNDgtUvY0NwXySDCP75wdW3fZyFVcyx1RQKTy3XoQ_4j1kRgQVfc8OFj2tlZeKjUzqkzd14tRKCnIvPuHtn8JuPloQvIMmYdaWQvVnJtLvy2MzbzIZkz1lLC8v3Zwec1OzK0CE765C6Eii6DWuJZ2Fpy8UzizTa4CFSObiZTZl79pQ';  // 把生成的Token粘贴到这里
-        const PROJECT_ID = '7636020878471495680';  // 你的项目ID已经帮你填好了
-        
-        // 对话历史上下文
-        let conversationHistory = [];
+        // ========== 配置区域 - 只需要改这里 ==========
+        const API_URL = 'https://z9zvzymyry.coze.site/stream_run';
+        const API_TOKEN = 'eyJhbGciOiJSUzI1NiIsImtpZCI6ImViZWU5MDU4LWJjZTctNDc2OS05ZTAxLTAwMzhlNTI0ZDcyZCJ9.eyJpc3MiOiJodHRwczovL2FwaS5jb3plLmNuIiwiYXVkIjpbIjE3ejFVS1NOdFFWTUFKRTdsbmFRYjlXNnhjcmJLOG5xIl0sImV4cCI6ODIxMDI2Njg3Njc5OSwiaWF0IjoxNzc4MDA0NzI5LCJzdWIiOiJzcGlmZmU6Ly9hcGkuY296ZS5jbi93b3JrbG9hZF9pZGVudGl0eS9pZDo3NjM2MDMwODgzOTMzMTkyMjI2Iiwic3JjIjoiaW5ib3VuZF9hdXRoX2FjY2Vzc190b2tlbl9pZDo3NjM2NDcyMTY3MTkzOTAzMTQ1In0.kT_iQwnSjhWr8eOb3v1Bxo98KmUtDkt4zA_cjc_jURCRfhZeb6W8wxBF8KDbjc82dT2T-dS8904VKYJYglpDdmii1xPquV1XA_4lhjvWTiP7Xka8SHAwyfQAvoTGTBbEZaS6gcv-SERUKnaj-DTmuWDtndn3YKavxaGjLz4eUNDgtUvY0NwXySDCP75wdW3fZyFVcyx1RQKTy3XoQ_4j1kRgQVfc8OFj2tlZeKjUzqkzd14tRKCnIvPuHtn8JuPloQvIMmYdaWQvVnJtLvy2MzbzIZkz1lLC8v3Zwec1OzK0CE765C6Eii6DWuJZ2Fpy8UzizTa4CFSObiZTZl79pQ';  // ← 只需要改这一行
+        const PROJECT_ID = '7636020878471495680';
         
         const chatContainer = document.getElementById('chatContainer');
         const userInput = document.getElementById('userInput');
@@ -201,24 +198,31 @@
             botMessageDiv.appendChild(typingSpan);
             
             try {
+                // 【完全匹配官方格式的请求体】
+                const requestBody = {
+                    "content": {
+                        "query": {
+                            "prompt": [
+                                {
+                                    "type": "text",
+                                    "content": { "text": message }
+                                }
+                            ]
+                        }
+                    },
+                    "type": "query",
+                    "session_id": "session_" + Date.now(),
+                    "project_id": PROJECT_ID
+                };
+                
                 // 调用API
                 const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + API_TOKEN  // 这里带上Token
+                        'Authorization': 'Bearer ' + API_TOKEN
                     },
-                    body: JSON.stringify({
-                        query: {
-                            prompt: [{
-                                type: "text",
-                                content: { text: message }
-                            }]
-                        },
-                        type: "query",
-                        session_id: "session_" + Date.now(),
-                        project_id: PROJECT_ID
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 if (!response.ok) {
@@ -243,18 +247,24 @@
                         if (line.startsWith('data: ')) {
                             try {
                                 const data = JSON.parse(line.slice(6));
-                                // 根据你的API实际返回格式调整这里
-                                if (data.choices && data.choices[0].delta && data.choices[0].delta.content) {
-                                    const content = data.choices[0].delta.content;
-                                    fullResponse += content;
-                                    botMessageDiv.innerHTML = formatMessage(fullResponse);
-                                    scrollToBottom();
+                                // 根据官方返回格式提取内容
+                                if (data.content && data.content.response) {
+                                    const content = data.content.response;
+                                    if (content) {
+                                        fullResponse += content;
+                                        botMessageDiv.innerHTML = formatMessage(fullResponse);
+                                        scrollToBottom();
+                                    }
                                 }
                             } catch (e) {
                                 // 忽略解析错误
                             }
                         }
                     }
+                }
+                
+                if (fullResponse === '') {
+                    botMessageDiv.innerHTML = '✅ 连接成功！但智能体没有返回内容，请检查知识库配置';
                 }
                 
             } catch (error) {
